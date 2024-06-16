@@ -8,8 +8,6 @@ import tty
 import uinput
 
 def drop_privileges(uid_name='nobody', gid_name='nogroup'):
-    # https://stackoverflow.com/questions/2699907/dropping-root-permissions-in-python
-
     if os.getuid() != 0:
         return
 
@@ -19,7 +17,7 @@ def drop_privileges(uid_name='nobody', gid_name='nogroup'):
     os.setgroups([])
     os.setgid(running_gid)
     os.setuid(running_uid)
-    old_umask = os.umask(0o77)
+    os.umask(0o77)
 
 # Key mapping and events
 key_mapping = {
@@ -50,7 +48,7 @@ key_mapping = {
     'y': uinput.KEY_Y,
     'z': uinput.KEY_Z,
     '\n': uinput.KEY_ENTER,
-    '\r': uinput.KEY_ENTER,  # Adding carriage return
+    '\r': uinput.KEY_ENTER,
     ' ': uinput.KEY_SPACE,
     '\x7f': uinput.KEY_BACKSPACE,
     '0': uinput.KEY_0,
@@ -74,13 +72,16 @@ key_mapping = {
     '\t': uinput.KEY_TAB,
     '-': uinput.KEY_MINUS,
     '=': uinput.KEY_EQUAL,
-    '\x1b': uinput.KEY_ESC, # <- does not work properly. It says sending key, but on the other end it receives "[A" and switches to uppercase
+    '\x1b': uinput.KEY_ESC,
     ',': uinput.KEY_COMMA,
     '/': uinput.KEY_SLASH,
     '\\': uinput.KEY_BACKSLASH,
     '\'': uinput.KEY_APOSTROPHE,
+    '\x1b[A': uinput.KEY_UP,
+    '\x1b[B': uinput.KEY_DOWN,
+    '\x1b[C': uinput.KEY_RIGHT,
+    '\x1b[D': uinput.KEY_LEFT,
 }
-
 
 def get_key():
     """Get a single key press."""
@@ -89,6 +90,9 @@ def get_key():
     try:
         tty.setraw(fd)
         ch = sys.stdin.read(1)
+        if ch == '\x1b':
+            # TODO: add max timeout to be able to read escape key
+            ch += sys.stdin.read(2)  # Read additional characters for escape sequences
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
@@ -96,7 +100,7 @@ def get_key():
 def main():
     print("BEGIN")
     uinput_fd = uinput.fdopen()
-    drop_privileges() # No need to be root beyond this line.
+    drop_privileges()
     print("DROPPED PRIVILEGES")
 
     shiftmaps = {
@@ -119,10 +123,11 @@ def main():
         '|': '\\',
         '+': '=',
         '"': '\'',
+        ':': ';',
     }
 
     with uinput.Device(key_mapping.values(), fd=uinput_fd) as device:
-        time.sleep(1) # gives time for the device to fully register
+        time.sleep(1)  # Gives time for the device to fully register
         print("READY!")
         try:
             while True:
@@ -132,7 +137,6 @@ def main():
                 if key in key_mapping:
                     print(f"Sending key: {repr(key)}, {repr(key_mapping[key])}")  # Debugging output
                     device.emit_click(key_mapping[key])
-                    # time.sleep(0.1)  # Small delay to prevent flooding
                 elif key.lower() in key_mapping:
                     device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[key.lower()]])
                 elif key in shiftmaps:
@@ -142,7 +146,6 @@ def main():
         except KeyboardInterrupt:
             print("Exiting...")
 
-
-
 if __name__ == "__main__":
     main()
+
