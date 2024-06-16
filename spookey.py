@@ -82,6 +82,7 @@ key_mapping = {
     '\x1b[C': uinput.KEY_RIGHT,
     '\x1b[D': uinput.KEY_LEFT,
     'KEY_LEFTALT': uinput.KEY_LEFTALT,
+    'KEY_LEFTCTRL': uinput.KEY_LEFTCTRL,
 }
 
 def get_key():
@@ -127,6 +128,41 @@ def remap(key, device):
         ':': ';',
     }
 
+    ctrlmaps = {
+        '\x01': 'a',
+        '\x02': 'b',
+        '\x03': 'c',
+        '\x04': 'd',
+        '\x05': 'e',
+        '\x06': 'f',
+        '\x07': 'g',
+        '\x08': 'h',
+        '\x09': 'i',
+        '\x0A': 'j',
+        '\x0B': 'k',
+        '\x0C': 'l',
+        '\x0D': 'm',
+        '\x0E': 'n',
+        '\x0F': 'o',
+        '\x10': 'p',
+        '\x11': 'q',
+        '\x12': 'r',
+        '\x13': 's',
+        '\x14': 't',
+        '\x15': 'u',
+        '\x16': 'v',
+        '\x17': 'w',
+        '\x18': 'x',
+        '\x19': 'y',
+        '\x1A': 'z',
+        '\x1B': '{',
+        '\x1C': '|',
+        '\x1D': '}',
+        '\x1E': '~',
+        '\x1F': 'DEL',
+    }
+
+
     if key in key_mapping:
         print(f"Sending key: {repr(key)}, {repr(key_mapping[key])}")
         device.emit_click(key_mapping[key])
@@ -136,7 +172,11 @@ def remap(key, device):
     elif key in shiftmaps:
         print(f"Sending key: SHIFT + {repr(shiftmaps[key])}, {repr(shiftmaps[key])}")
         device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[shiftmaps[key]]])
+    elif key in ctrlmaps:
+        print(f"Sending key: CTRL + {repr(ctrlmaps[key])}, {repr(ctrlmaps[key])}")
+        device.emit_combo([uinput.KEY_LEFTCTRL, key_mapping[ctrlmaps[key]]])
     elif key.startswith("\x1b[1;"):
+        # there are probably other event numbers, but I don't know them..
         # determine if shift, alt, shift+alt, or ctrl+alt event
         SHIFT     = "2"
         ALT       = "3"
@@ -156,7 +196,8 @@ def remap(key, device):
             print(f"Sending key: SHIFT + ALT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
             device.emit_combo([uinput.KEY_LEFTSHIFT, uinput.KEY_LEFTALT, key_mapping[reconstituted]])
         elif command == CTRL_ALT:
-            print("CTRL_ALT not supported yet")
+            print(f"Sending key: CTRL + ALT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
+            device.emit_combo([uinput.KEY_LEFTCTRL, uinput.KEY_LEFTALT, key_mapping[reconstituted]])
         else:
             print("TODO:", command, "rest", rest_of_string)
     else:
