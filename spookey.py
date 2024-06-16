@@ -81,6 +81,7 @@ key_mapping = {
     '\x1b[B': uinput.KEY_DOWN,
     '\x1b[C': uinput.KEY_RIGHT,
     '\x1b[D': uinput.KEY_LEFT,
+    'KEY_LEFTALT': uinput.KEY_LEFTALT,
 }
 
 def get_key():
@@ -101,12 +102,8 @@ def get_key():
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
 
-def main():
-    print("BEGIN")
-    uinput_fd = uinput.fdopen()
-    drop_privileges()
-    print("DROPPED PRIVILEGES")
-
+def remap(key, device):
+    """Takes in an unknown event and tries to translate into known event and emit combo."""
     shiftmaps = {
         '!': '1',
         '@': '2',
@@ -130,6 +127,41 @@ def main():
         ':': ';',
     }
 
+    if key.lower() in key_mapping:
+        device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[key.lower()]])
+    elif key in shiftmaps:
+        device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[shiftmaps[key]]])
+    elif key.startswith("\x1b[1;"):
+        # determine if shift, alt, shift+alt, or ctrl+alt event
+        SHIFT     = "2"
+        ALT       = "3"
+        SHIFT_ALT = "4"
+        CTRL_ALT  = "7"
+        no_prefix = key.split("\x1b[1;", 1)[1]
+        command, rest_of_string = no_prefix[0], no_prefix[1:]
+        reconstituted = "\x1b[" + rest_of_string
+
+        if command == SHIFT:
+            device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[reconstituted]])
+        elif command == ALT:
+            print("ALT not supported yet")
+        elif command == SHIFT_ALT:
+            print("SHIFT_ALT not supported yet")
+        elif command == CTRL_ALT:
+            print("CTRL_ALT not supported yet")
+        else:
+            # device.emit_combo([uinput.KEY_LEFTALT, key_mapping[reconstituted]])
+            print("TODO:", command, "rest", rest_of_string)
+    else:
+        print("WELP", repr(key))
+
+def main():
+    print("BEGIN")
+    uinput_fd = uinput.fdopen()
+    drop_privileges()
+    print("DROPPED PRIVILEGES")
+
+
     with uinput.Device(key_mapping.values(), fd=uinput_fd) as device:
         time.sleep(1)  # Gives time for the device to fully register
         print("READY!")
@@ -141,12 +173,8 @@ def main():
                 if key in key_mapping:
                     print(f"Sending key: {repr(key)}, {repr(key_mapping[key])}")  # Debugging output
                     device.emit_click(key_mapping[key])
-                elif key.lower() in key_mapping:
-                    device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[key.lower()]])
-                elif key in shiftmaps:
-                    device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[shiftmaps[key]]])
                 else:
-                    print("WELP", repr(key))
+                    remap(key, device)
         except KeyboardInterrupt:
             print("Exiting...")
 
