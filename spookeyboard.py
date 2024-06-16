@@ -225,6 +225,9 @@ def remap(key, device):
             device.emit_combo([key_mapping['KEY_LEFTSHIFT'], key_mapping['KEY_LEFTALT'], key_mapping[second_part.lower()]])
         else:
             print(f"TODO: {repr(key)}")
+    elif key == '\x00':
+        print(f"Sending key: CTRL + SPACE, {repr(key_mapping[' '])}")
+        device.emit_combo([key_mapping['KEY_LEFTCTRL'], key_mapping[' ']])
     else:
         print("WELP", repr(key))
 
