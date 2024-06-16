@@ -68,7 +68,6 @@ key_mapping = {
     ']': uinput.KEY_RIGHTBRACE,
     '(': uinput.KEY_KPLEFTPAREN,
     ')': uinput.KEY_KPRIGHTPAREN,
-    'LSHIFT': uinput.KEY_LEFTSHIFT,
     '\t': uinput.KEY_TAB,
     '-': uinput.KEY_MINUS,
     '=': uinput.KEY_EQUAL,
@@ -81,9 +80,10 @@ key_mapping = {
     '\x1b[B': uinput.KEY_DOWN,
     '\x1b[C': uinput.KEY_RIGHT,
     '\x1b[D': uinput.KEY_LEFT,
+    'KEY_CAPSLOCK': uinput.KEY_CAPSLOCK,
     'KEY_LEFTALT': uinput.KEY_LEFTALT,
     'KEY_LEFTCTRL': uinput.KEY_LEFTCTRL,
-    'KEY_CAPSLOCK': uinput.KEY_CAPSLOCK,
+    'KEY_LEFTSHIFT': uinput.KEY_LEFTSHIFT,
     # TODO: make this configurable
     '\x1b': uinput.KEY_CAPSLOCK,
 }
@@ -172,10 +172,10 @@ def remap(key, device):
         device.emit_click(key_mapping[key])
     elif key.lower() in key_mapping:
         print(f"Sending key: SHIFT + {repr(key.lower())}, {repr(key_mapping[key.lower()])}")
-        device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[key.lower()]])
+        device.emit_combo([key_mapping['KEY_LEFTSHIFT'], key_mapping[key.lower()]])
     elif key in shiftmaps:
         print(f"Sending key: SHIFT + {repr(shiftmaps[key])}, {repr(shiftmaps[key])}")
-        device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[shiftmaps[key]]])
+        device.emit_combo([key_mapping['KEY_LEFTSHIFT'], key_mapping[shiftmaps[key]]])
     elif key in ctrlmaps:
         print(f"Sending key: CTRL + {repr(ctrlmaps[key])}, {repr(ctrlmaps[key])}")
         device.emit_combo([uinput.KEY_LEFTCTRL, key_mapping[ctrlmaps[key]]])
@@ -189,10 +189,10 @@ def remap(key, device):
         no_prefix = key.split("\x1b[1;", 1)[1]
         command, rest_of_string = no_prefix[0], no_prefix[1:]
         reconstituted = "\x1b[" + rest_of_string
-
+        print("WOMPUS")
         if command == SHIFT:
             print(f"Sending key: SHIFT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
-            device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[reconstituted]])
+            device.emit_combo([key_mapping['KEY_LEFTSHIFT'], key_mapping[reconstituted]])
         elif command == ALT:
             print(f"Sending key: ALT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
             device.emit_combo([uinput.KEY_LEFTALT, key_mapping[reconstituted]])
@@ -203,18 +203,26 @@ def remap(key, device):
             print(f"Sending key: CTRL + ALT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
             device.emit_combo([uinput.KEY_LEFTCTRL, uinput.KEY_LEFTALT, key_mapping[reconstituted]])
         else:
-            print("TODO:", command, "rest", rest_of_string)
+            print(f"TODO: {command}; {repr(rest_of_string)}")
     # TODO: this event should technically not be happening
     elif key == '\x1b\x1b':
         ## TODO: make this configurable
         print("Sending CAPS_LOCK")
         device.emit_click(key_mapping['KEY_CAPSLOCK'])
+    # TODO: make recursive instead
     elif key.startswith('\x1b'):
         second_part = key.split("\x1b", 1)[1]
-        print(f"Sending key: ALT + {repr(key_mapping[second_part])}, {repr(key_mapping[second_part])}")
-        device.emit_combo([key_mapping['KEY_LEFTALT'], key_mapping[second_part]])
+        if second_part in key_mapping:
+            print(f"Sending key: ALT + {repr(second_part)}, {repr(key_mapping[second_part])}")
+            device.emit_combo([key_mapping['KEY_LEFTALT'], key_mapping[second_part]])
+        elif second_part.lower() in key_mapping:
+            print(f"Sending key: SHIFT + ALT + {repr(second_part.lower())}, {repr(key_mapping[second_part.lower()])}")
+            device.emit_combo([key_mapping['KEY_LEFTSHIFT'], key_mapping['KEY_LEFTALT'], key_mapping[second_part.lower()]])
+        else:
+            print(f"TODO: {repr(key)}")
     else:
         print("WELP", repr(key))
+
 def main():
     print("BEGIN")
     uinput_fd = uinput.fdopen()
