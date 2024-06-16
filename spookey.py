@@ -84,6 +84,8 @@ key_mapping = {
     'KEY_LEFTALT': uinput.KEY_LEFTALT,
     'KEY_LEFTCTRL': uinput.KEY_LEFTCTRL,
     'KEY_CAPSLOCK': uinput.KEY_CAPSLOCK,
+    # TODO: make this configurable
+    '\x1b': uinput.KEY_CAPSLOCK,
 }
 
 def get_key():
@@ -202,9 +204,15 @@ def remap(key, device):
             device.emit_combo([uinput.KEY_LEFTCTRL, uinput.KEY_LEFTALT, key_mapping[reconstituted]])
         else:
             print("TODO:", command, "rest", rest_of_string)
+    # TODO: this event should technically not be happening
     elif key == '\x1b\x1b':
         ## TODO: make this configurable
+        print("Sending CAPS_LOCK")
         device.emit_click(key_mapping['KEY_CAPSLOCK'])
+    elif key.startswith('\x1b'):
+        second_part = key.split("\x1b", 1)[1]
+        print(f"Sending key: ALT + {repr(key_mapping[second_part])}, {repr(key_mapping[second_part])}")
+        device.emit_combo([key_mapping['KEY_LEFTALT'], key_mapping[second_part]])
     else:
         print("WELP", repr(key))
 def main():
