@@ -167,7 +167,11 @@ def remap(key, device):
     }
 
 
-    if key in key_mapping:
+    # special case...? ...or just me?
+    if key == "\n":
+        print(f"Sending key: CTRL + {repr('j')}, {repr(key_mapping['j'])}")
+        device.emit_combo([key_mapping['KEY_LEFTCTRL'], key_mapping['j']])
+    elif key in key_mapping:
         print(f"Sending key: {repr(key)}, {repr(key_mapping[key])}")
         device.emit_click(key_mapping[key])
     elif key.lower() in key_mapping:
@@ -178,7 +182,7 @@ def remap(key, device):
         device.emit_combo([key_mapping['KEY_LEFTSHIFT'], key_mapping[shiftmaps[key]]])
     elif key in ctrlmaps:
         print(f"Sending key: CTRL + {repr(ctrlmaps[key])}, {repr(ctrlmaps[key])}")
-        device.emit_combo([uinput.KEY_LEFTCTRL, key_mapping[ctrlmaps[key]]])
+        device.emit_combo([key_mapping['KEY_LEFTCTRL'], key_mapping[ctrlmaps[key]]])
     elif key.startswith("\x1b[1;"):
         # there are probably other event numbers, but I don't know them..
         # determine if shift, alt, shift+alt, or ctrl+alt event
@@ -189,19 +193,18 @@ def remap(key, device):
         no_prefix = key.split("\x1b[1;", 1)[1]
         command, rest_of_string = no_prefix[0], no_prefix[1:]
         reconstituted = "\x1b[" + rest_of_string
-        print("WOMPUS")
         if command == SHIFT:
             print(f"Sending key: SHIFT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
             device.emit_combo([key_mapping['KEY_LEFTSHIFT'], key_mapping[reconstituted]])
         elif command == ALT:
             print(f"Sending key: ALT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
-            device.emit_combo([uinput.KEY_LEFTALT, key_mapping[reconstituted]])
+            device.emit_combo([key_mapping['KEY_LEFTALT'], key_mapping[reconstituted]])
         elif command == SHIFT_ALT:
             print(f"Sending key: SHIFT + ALT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
-            device.emit_combo([uinput.KEY_LEFTSHIFT, uinput.KEY_LEFTALT, key_mapping[reconstituted]])
+            device.emit_combo([key_mapping['KEY_LEFTSHIFT'], key_mapping['KEY_LEFTALT'], key_mapping[reconstituted]])
         elif command == CTRL_ALT:
             print(f"Sending key: CTRL + ALT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
-            device.emit_combo([uinput.KEY_LEFTCTRL, uinput.KEY_LEFTALT, key_mapping[reconstituted]])
+            device.emit_combo([key_mapping['KEY_LEFTCTRL'], key_mapping['KEY_LEFTALT'], key_mapping[reconstituted]])
         else:
             print(f"TODO: {command}; {repr(rest_of_string)}")
     # TODO: this event should technically not be happening
