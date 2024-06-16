@@ -73,6 +73,7 @@ key_mapping = {
     '=': uinput.KEY_EQUAL,
     '\x1b': uinput.KEY_ESC,
     ',': uinput.KEY_COMMA,
+    '`': uinput.KEY_GRAVE,
     '/': uinput.KEY_SLASH,
     '\\': uinput.KEY_BACKSLASH,
     '\'': uinput.KEY_APOSTROPHE,
@@ -130,6 +131,7 @@ def remap(key, device):
         '+': '=',
         '"': '\'',
         ':': ';',
+        '~': '`',
     }
 
     ctrlmaps = {
