@@ -83,6 +83,7 @@ key_mapping = {
     '\x1b[D': uinput.KEY_LEFT,
     'KEY_LEFTALT': uinput.KEY_LEFTALT,
     'KEY_LEFTCTRL': uinput.KEY_LEFTCTRL,
+    'KEY_CAPSLOCK': uinput.KEY_CAPSLOCK,
 }
 
 def get_key():
@@ -93,6 +94,7 @@ def get_key():
         tty.setraw(fd)
         ch = sys.stdin.read(1)
         if ch == '\x1b':
+            # TODO: add timeout and break and send only '\x1b'. This is just regular escape.
             ch += sys.stdin.read(1)
             if ch[1] == '[':
                 while True:
@@ -200,9 +202,11 @@ def remap(key, device):
             device.emit_combo([uinput.KEY_LEFTCTRL, uinput.KEY_LEFTALT, key_mapping[reconstituted]])
         else:
             print("TODO:", command, "rest", rest_of_string)
+    elif key == '\x1b\x1b':
+        ## TODO: make this configurable
+        device.emit_click(key_mapping['KEY_CAPSLOCK'])
     else:
         print("WELP", repr(key))
-
 def main():
     print("BEGIN")
     uinput_fd = uinput.fdopen()
