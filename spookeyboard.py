@@ -239,10 +239,9 @@ def main():
         try:
             while True:
                 key = get_key()
-                if key == '\x03':  # Ctrl+C
-                    break
-                else:
-                    remap(key, device)
+                # if key == '\x03':  # Ctrl+C
+                #     break
+                remap(key, device)
         except KeyboardInterrupt:
             print("Exiting...")
 
