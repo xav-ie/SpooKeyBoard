@@ -127,9 +127,14 @@ def remap(key, device):
         ':': ';',
     }
 
-    if key.lower() in key_mapping:
+    if key in key_mapping:
+        print(f"Sending key: {repr(key)}, {repr(key_mapping[key])}")
+        device.emit_click(key_mapping[key])
+    elif key.lower() in key_mapping:
+        print(f"Sending key: SHIFT + {repr(key.lower())}, {repr(key_mapping[key.lower()])}")
         device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[key.lower()]])
     elif key in shiftmaps:
+        print(f"Sending key: SHIFT + {repr(shiftmaps[key])}, {repr(shiftmaps[key])}")
         device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[shiftmaps[key]]])
     elif key.startswith("\x1b[1;"):
         # determine if shift, alt, shift+alt, or ctrl+alt event
@@ -142,15 +147,17 @@ def remap(key, device):
         reconstituted = "\x1b[" + rest_of_string
 
         if command == SHIFT:
+            print(f"Sending key: SHIFT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
             device.emit_combo([uinput.KEY_LEFTSHIFT, key_mapping[reconstituted]])
         elif command == ALT:
-            print("ALT not supported yet")
+            print(f"Sending key: ALT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
+            device.emit_combo([uinput.KEY_LEFTALT, key_mapping[reconstituted]])
         elif command == SHIFT_ALT:
-            print("SHIFT_ALT not supported yet")
+            print(f"Sending key: SHIFT + ALT + {repr(key_mapping[reconstituted])}, {repr(key_mapping[reconstituted])}")
+            device.emit_combo([uinput.KEY_LEFTSHIFT, uinput.KEY_LEFTALT, key_mapping[reconstituted]])
         elif command == CTRL_ALT:
             print("CTRL_ALT not supported yet")
         else:
-            # device.emit_combo([uinput.KEY_LEFTALT, key_mapping[reconstituted]])
             print("TODO:", command, "rest", rest_of_string)
     else:
         print("WELP", repr(key))
@@ -170,9 +177,6 @@ def main():
                 key = get_key()
                 if key == '\x03':  # Ctrl+C
                     break
-                if key in key_mapping:
-                    print(f"Sending key: {repr(key)}, {repr(key_mapping[key])}")  # Debugging output
-                    device.emit_click(key_mapping[key])
                 else:
                     remap(key, device)
         except KeyboardInterrupt:
