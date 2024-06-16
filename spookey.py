@@ -47,7 +47,7 @@ key_mapping = {
     'x': uinput.KEY_X,
     'y': uinput.KEY_Y,
     'z': uinput.KEY_Z,
-    '\n': uinput.KEY_ENTER,
+    '\n': uinput.KEY_ENTER, # maybe this should be ctrl+j?
     '\r': uinput.KEY_ENTER,
     ' ': uinput.KEY_SPACE,
     '\x7f': uinput.KEY_BACKSPACE,
@@ -84,15 +84,19 @@ key_mapping = {
 }
 
 def get_key():
-    """Get a single key press."""
+    """Get a single key press, including full ANSI escape sequences."""
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
         tty.setraw(fd)
         ch = sys.stdin.read(1)
         if ch == '\x1b':
-            # TODO: add max timeout to be able to read escape key
-            ch += sys.stdin.read(2)  # Read additional characters for escape sequences
+            ch += sys.stdin.read(1)
+            if ch[1] == '[':
+                while True:
+                    ch += sys.stdin.read(1)
+                    if ch[-1] in 'ABCD~':
+                        break
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
@@ -148,4 +152,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
